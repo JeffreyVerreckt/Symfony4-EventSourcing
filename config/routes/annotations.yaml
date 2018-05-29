@@ -1,0 +1,4 @@
+rest_controller:
+    resource: ../../src/Presentation/UI/Api/Rest
+    type: annotation
+    prefix: /api

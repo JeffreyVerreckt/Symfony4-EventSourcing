@@ -1,0 +1,57 @@
+###############################################################################
+#                          Generated on phpdocker.io                          #
+###############################################################################
+version: "3.1"
+services:
+
+    memcached:
+      image: memcached:alpine
+      container_name: symfony-eventsourcing-memcached
+
+    redis:
+      image: redis:alpine
+      container_name: symfony-eventsourcing-redis
+
+    mysql:
+      image: mysql:5.7
+      container_name: symfony-eventsourcing-mysql
+      working_dir: /application
+      volumes:
+        - ../../../:/application
+      environment:
+        - MYSQL_ROOT_PASSWORD=root
+        - MYSQL_DATABASE=symfony
+        - MYSQL_USER=symfony
+        - MYSQL_PASSWORD=symfony
+      ports:
+        - "8082:3306"
+
+    webserver:
+      image: nginx:alpine
+      container_name: symfony-eventsourcing-webserver
+      working_dir: /application
+      volumes:
+          - ../../../:/application
+          - ./phpdocker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      ports:
+       - "8080:80"
+
+    php-fpm:
+      build: phpdocker/php-fpm
+      environment:
+        PHP_IDE_CONFIG: "serverName=my.docker"
+      container_name: symfony-eventsourcing-fpm
+      working_dir: /application
+      volumes:
+        - ../../../:/application
+        - ./phpdocker/php-fpm/php-ini-overrides.ini:/etc/php/7.2/fpm/conf.d/99-overrides.ini
+
+    projection_product:
+      image: prooph/php:7.2-cli
+      container_name: symfony-eventsourcing-projection-product
+      working_dir: /application
+      volumes:
+        - ../../../:/application
+      depends_on:
+        - mysql
+      command: php bin/console event-store:projection:run product_projection
